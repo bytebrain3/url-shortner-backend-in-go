@@ -13,6 +13,14 @@ import (
 	"gorm.io/gorm"
 )
 
+// Define the URL model for PostgreSQL
+type URL struct {
+	ID        uint   `gorm:"primaryKey"`
+	ShortCode string `gorm:"uniqueIndex"`
+	FullURL   string `gorm:"not null"`
+	CreatedAt time.Time
+}
+
 type FullURL struct {
 	URL string `json:"url"`
 }
@@ -27,15 +35,11 @@ func createShortUrl() string {
 	return shortURL
 }
 
-type Data struct {
-	Status  int32  `json:"status"`
-	Message string `json:"message"`
-}
-
 var ctx = context.Background()
 var redisClient *redis.Client
 var db *gorm.DB
 
+// Initialize Redis connection
 func initRedis() {
 	opt, err := redis.ParseURL("redis://default:y7NxahNfIelbY0gBISOIP2P7zK5T15hX@redis-15351.c15.us-east-1-4.ec2.redns.redis-cloud.com:15351")
 	if err != nil {
@@ -55,13 +59,12 @@ func initRedis() {
 	fmt.Println("✅ Redis Connected! Response:", val)
 }
 
+// Initialize PostgreSQL connection and auto-migrate the URL model
 func initPostgress() {
 	dsn := "postgresql://url-shortner_owner:npg_c3FaYpn5XvgV@ep-bold-smoke-a4dcqj6r-pooler.us-east-1.aws.neon.tech/url-shortner?sslmode=require"
 
 	var err error
-
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-
+	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("❌ Unable to connect to database: %v", err)
 	}
@@ -72,7 +75,6 @@ func initPostgress() {
 	if err != nil {
 		log.Fatalf("❌ Auto migration failed: %v", err)
 	}
-
 }
 
 func main() {
@@ -90,7 +92,7 @@ func main() {
 	// Root check
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"message": "I still alive 🙂",
+			"message": "I am still alive 🙂",
 			"status":  200,
 		})
 	})
@@ -109,12 +111,22 @@ func main() {
 		// Generate short code
 		shortURL := createShortUrl()
 
-		// Store in Redis with 24 hour expiration
+		// Store in Redis with 24-hour expiration
 		err := redisClient.Set(ctx, shortURL, req.URL, 0).Err()
 		if err != nil {
 			log.Printf("❌ Failed to store in Redis: %v", err)
 			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 				"message": "Failed to save to Redis",
+				"status":  500,
+			})
+		}
+
+		// Also store in PostgreSQL for permanent storage
+		urlRecord := URL{ShortCode: shortURL, FullURL: req.URL}
+		if err := db.Create(&urlRecord).Error; err != nil {
+			log.Printf("❌ Failed to store in PostgreSQL: %v", err)
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to save to database",
 				"status":  500,
 			})
 		}
@@ -130,17 +142,32 @@ func main() {
 		})
 	})
 
+	// GET: Redirect from shortened URL to full URL
 	app.Get("/r/:code", func(c *fiber.Ctx) error {
 		shortCode := c.Params("code")
 
+		// Check Redis first
 		fullURL, err := redisClient.Get(ctx, shortCode).Result()
-
 		if err == redis.Nil {
-			// Not found
-			return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
-				"message": "Short URL not found",
-				"status":  404,
-			})
+			// If not found in Redis, check PostgreSQL
+			var urlRecord URL
+			if err := db.Where("short_code = ?", shortCode).First(&urlRecord).Error; err != nil {
+				if err == gorm.ErrRecordNotFound {
+					// Not found in both Redis and PostgreSQL
+					return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+						"message": "Short URL not found",
+						"status":  404,
+					})
+				}
+				log.Printf("❌ PostgreSQL query error: %v", err)
+				return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+					"message": "Server error",
+					"status":  500,
+				})
+			}
+			// Store in Redis for faster future access
+			redisClient.Set(ctx, shortCode, urlRecord.FullURL, 0).Err()
+			fullURL = urlRecord.FullURL
 		} else if err != nil {
 			// Redis error
 			log.Printf("❌ Redis GET error: %v", err)
@@ -150,6 +177,7 @@ func main() {
 			})
 		}
 
+		// Redirect to the full URL
 		return c.Redirect(fullURL, fiber.StatusFound)
 	})
 
