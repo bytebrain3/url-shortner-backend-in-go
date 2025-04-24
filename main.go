@@ -9,6 +9,8 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type FullURL struct {
@@ -32,10 +34,10 @@ type Data struct {
 
 var ctx = context.Background()
 var redisClient *redis.Client
+var db *gorm.DB
 
 func initRedis() {
-	redisURL := "redis://default:y7NxahNfIelbY0gBISOIP2P7zK5T15hX@redis-15351.c15.us-east-1-4.ec2.redns.redis-cloud.com:15351"
-	opt, err := redis.ParseURL(redisURL)
+	opt, err := redis.ParseURL("redis://default:y7NxahNfIelbY0gBISOIP2P7zK5T15hX@redis-15351.c15.us-east-1-4.ec2.redns.redis-cloud.com:15351")
 	if err != nil {
 		log.Fatal("❌ Redis URL parsing error:", err)
 	}
@@ -53,10 +55,31 @@ func initRedis() {
 	fmt.Println("✅ Redis Connected! Response:", val)
 }
 
+func initPostgress() {
+	dsn := "postgresql://url-shortner_owner:npg_c3FaYpn5XvgV@ep-bold-smoke-a4dcqj6r-pooler.us-east-1.aws.neon.tech/url-shortner?sslmode=require"
+
+	var err error
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	if err != nil {
+		log.Fatalf("❌ Unable to connect to database: %v", err)
+	}
+	fmt.Println("✅ Connected to PostgreSQL!")
+
+	// Auto migrate URL model
+	err = db.AutoMigrate(&URL{})
+	if err != nil {
+		log.Fatalf("❌ Auto migration failed: %v", err)
+	}
+
+}
+
 func main() {
 	app := fiber.New()
 
 	initRedis()
+	initPostgress()
 
 	// Middleware to log every request
 	app.Use(func(c *fiber.Ctx) error {
