@@ -422,6 +422,7 @@ func main() {
 			HTTPOnly: true,
 			Secure:   true,
 			SameSite: fiber.CookieSameSiteNoneMode,
+			Domain:   ".dipdev.xyz", // ← IMPORTANT: set domain to include subdomains
 		})
 
 		return c.JSON(fiber.Map{
@@ -494,6 +495,7 @@ func main() {
 			HTTPOnly: true,
 			Secure:   true,
 			SameSite: fiber.CookieSameSiteNoneMode,
+			Domain:   ".dipdev.xyz", // ← IMPORTANT: set domain to include subdomains
 		})
 
 		return c.JSON(fiber.Map{
