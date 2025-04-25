@@ -420,9 +420,8 @@ func main() {
 			Value:    token,
 			Expires:  time.Now().Add(240 * time.Hour),
 			HTTPOnly: true,
-			Secure:   true,                         // ← only over HTTPS
-			SameSite: fiber.CookieSameSiteNoneMode, // ← allow cross-site
-			// Domain:   "dipdev.xyz",        // ← optionally restrict domain
+			Secure:   true,
+			SameSite: fiber.CookieSameSiteNoneMode,
 		})
 
 		return c.JSON(fiber.Map{
@@ -493,9 +492,8 @@ func main() {
 			Value:    token,
 			Expires:  time.Now().Add(240 * time.Hour),
 			HTTPOnly: true,
-			Secure:   true,                         // ← only over HTTPS
-			SameSite: fiber.CookieSameSiteNoneMode, // ← allow cross-site
-			// Domain:   "dipdev.xyz",        // ← optionally restrict domain
+			Secure:   true,
+			SameSite: fiber.CookieSameSiteNoneMode,
 		})
 
 		return c.JSON(fiber.Map{
