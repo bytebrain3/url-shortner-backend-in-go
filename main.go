@@ -101,10 +101,10 @@ func initPostgress() {
 	fmt.Println("✅ Connected to PostgreSQL!")
 
 	// Auto migrate URL model
-	err = db.AutoMigrate(&User{}, &Analitics{}, &URL{})
+	/* err = db.AutoMigrate(&User{}, &Analitics{}, &URL{})
 	if err != nil {
 		log.Fatalf("❌ Auto migration failed: %v", err)
-	}
+	} */
 }
 
 type CustomTokenJwtStucture struct {
@@ -538,5 +538,5 @@ func main() {
 		})
 	})
 
-	log.Fatal(app.Listen(":3000"))
+	log.Fatal(app.Listen(":8000"))
 }
