@@ -179,7 +179,7 @@ func main() {
 	initPostgress()
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "https://urls.dipdev.xyz,http://localhos:3000/",
+		AllowOrigins:     "http://localhost:3000/",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
 		AllowCredentials: true, // ← must be true to set cookies
@@ -422,7 +422,6 @@ func main() {
 			HTTPOnly: true,
 			Secure:   true,
 			SameSite: fiber.CookieSameSiteNoneMode,
-			Domain:   ".dipdev.xyz", // ← IMPORTANT: set domain to include subdomains
 		})
 
 		return c.JSON(fiber.Map{
@@ -495,7 +494,6 @@ func main() {
 			HTTPOnly: true,
 			Secure:   true,
 			SameSite: fiber.CookieSameSiteNoneMode,
-			Domain:   ".dipdev.xyz", // ← IMPORTANT: set domain to include subdomains
 		})
 
 		return c.JSON(fiber.Map{
