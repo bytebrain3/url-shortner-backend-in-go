@@ -179,10 +179,10 @@ func main() {
 	initPostgress()
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "https://urls.dipdev.xyz", // your frontend origin
+		AllowOrigins:     "https://urls.dipdev.xyz,http://localhos:3000/",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
-		AllowCredentials: true, // if you're using cookies
+		AllowCredentials: true, // ← must be true to set cookies
 	}))
 
 	// Middleware to log every request
