@@ -321,7 +321,10 @@ func main() {
 				})
 			}
 			// Store in Redis for faster future access
-			redisClient.Set(ctx, shortCode, urlRecord.FullURL, 0).Err()
+			if err := redisClient.Set(ctx, shortCode, urlRecord.FullURL, 24*time.Hour).Err(); err != nil {
+				log.Printf("❌ Failed to cache URL in Redis: %v", err)
+			}
+
 			fullURL = urlRecord.FullURL
 
 		} else if err != nil {
@@ -415,7 +418,11 @@ func main() {
 		c.Cookie(&fiber.Cookie{
 			Name:     "token",
 			Value:    token,
+			Expires:  time.Now().Add(240 * time.Hour),
 			HTTPOnly: true,
+			Secure:   true,                         // ← only over HTTPS
+			SameSite: fiber.CookieSameSiteNoneMode, // ← allow cross-site
+			// Domain:   "dipdev.xyz",        // ← optionally restrict domain
 		})
 
 		return c.JSON(fiber.Map{
@@ -481,14 +488,15 @@ func main() {
 			})
 		}
 
-		cookie := fiber.Cookie{
+		c.Cookie(&fiber.Cookie{
 			Name:     "token",
 			Value:    token,
 			Expires:  time.Now().Add(240 * time.Hour),
 			HTTPOnly: true,
-		}
-
-		c.Cookie(&cookie)
+			Secure:   true,                         // ← only over HTTPS
+			SameSite: fiber.CookieSameSiteNoneMode, // ← allow cross-site
+			// Domain:   "dipdev.xyz",        // ← optionally restrict domain
+		})
 
 		return c.JSON(fiber.Map{
 			"message": "Login successful",
