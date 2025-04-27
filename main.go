@@ -250,7 +250,7 @@ func main() {
 	})
 
 	// GET: Redirect from shortened URL to full URL
-	app.Get("/:code", func(c *fiber.Ctx) error {
+	app.Get("/r/:code", func(c *fiber.Ctx) error {
 		shortCode := c.Params("code")
 		browser, os, device, _ := GetVisitorInfo(c)
 		ip := c.IP()
