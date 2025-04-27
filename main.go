@@ -381,6 +381,8 @@ func main() {
 			})
 		}
 
+		fmt.Printf("name %s email %s password %s ", user.Username, user.Email, user.Password)
+
 		if user.Username == "" || user.Password == "" || user.Email == "" {
 			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 				"message": "Username, password, and email are required",
@@ -540,6 +542,74 @@ func main() {
 		return c.JSON(fiber.Map{
 			"data":    urls,
 			"message": "URLs found successfully",
+			"status":  200,
+		})
+	})
+
+	// Update the delete URL route
+	app.Delete("/delete-url/:urlId", func(c *fiber.Ctx) error {
+		urlId := c.Params("urlId")
+
+		// Declare the URL struct
+		var urlRecord URL
+		var analiticsRecord Analitics
+
+		// Query for the URL record to delete
+		if err := db.Where("id = ?", urlId).First(&urlRecord).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+					"message": "URL Not Found!",
+					"status":  404,
+				})
+			}
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Server error",
+				"status":  500,
+			})
+		}
+
+		// Begin a transaction
+		tx := db.Begin()
+
+		analyticsId := urlRecord.AnaliticsID
+		// Delete the URL record
+		if err := tx.Delete(&urlRecord).Error; err != nil {
+			tx.Rollback()
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to delete URL",
+				"status":  500,
+			})
+		}
+
+		// Delete associated analytics record
+		if err := tx.Delete(&analiticsRecord, analyticsId).Error; err != nil {
+			tx.Rollback()
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"message": "Failed to delete analytics",
+				"status":  500,
+			})
+		}
+
+		// Commit the transaction
+		tx.Commit()
+
+		return c.JSON(fiber.Map{
+			"message": "URL deleted successfully",
+			"status":  200,
+		})
+	})
+
+	app.Post("/logout", func(c *fiber.Ctx) error {
+		c.Cookie(&fiber.Cookie{
+			Name:     "token",
+			Value:    "",
+			Expires:  time.Now().Add(-1 * time.Hour),
+			HTTPOnly: true,
+			Secure:   true,
+			SameSite: fiber.CookieSameSiteNoneMode,
+		})
+		return c.JSON(fiber.Map{
+			"message": "Logout successful",
 			"status":  200,
 		})
 	})
