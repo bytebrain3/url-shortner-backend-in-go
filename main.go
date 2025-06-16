@@ -71,7 +71,7 @@ var jwtSecret = []byte("kobejmorithiknai")
 
 // Initialize Redis connection
 func initRedis() {
-	opt, err := redis.ParseURL("redis://default:y7NxahNfIelbY0gBISOIP2P7zK5T15hX@redis-15351.c15.us-east-1-4.ec2.redns.redis-cloud.com:15351")
+	opt, err := redis.ParseURL("redis://default:RF9ddo53yeyty5Z6vRpTeICHAhagfX36@redis-18174.c278.us-east-1-4.ec2.redns.redis-cloud.com:18174")
 	if err != nil {
 		log.Fatal("❌ Redis URL parsing error:", err)
 	}
