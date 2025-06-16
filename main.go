@@ -179,7 +179,7 @@ func main() {
 	initPostgress()
 
 	app.Use(cors.New(cors.Config{
-		AllowOrigins:     "https://url.dipdev.xyz",
+		AllowOrigins:     "*",
 		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
 		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
 		AllowCredentials: true, // ← must be true to set cookies
